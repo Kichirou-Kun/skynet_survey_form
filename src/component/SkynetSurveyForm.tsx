@@ -1,7 +1,7 @@
 import { addDoc, collection } from "firebase/firestore";
 import { useState } from "react";
 import { db } from "../firebase";
-import { channels, genres, times } from "../utils";
+import { channels, genres, times, visions } from "../utils";
 import { motion } from "framer-motion";
 import { Controller, useForm } from "react-hook-form";
 
@@ -11,10 +11,17 @@ type FormValues = {
   favChannel?: string;
   watchingTime?: string;
   favGenre?: string;
+  favVision?: string;
   dislikeChannel?: string;
   createdAt?: Date;
 };
-const steps = ["Fav Channel", "Watching Time", "Fav Genre", "Dislike Channel"];
+const steps = [
+  "Fav Channel",
+  "Watching Time",
+  "Fav Genre",
+  "favVision",
+  "Dislike Channel",
+];
 const SkynetSurveyForm = () => {
   const [msg, setMsg] = useState<string>("");
   const [finished, setIsFinished] = useState<boolean>(false);
@@ -34,6 +41,7 @@ const SkynetSurveyForm = () => {
       favChannel: "",
       watchingTime: "",
       favGenre: "",
+      favVision: "",
       dislikeChannel: "",
       createdAt: new Date(Date.now()),
     },
@@ -45,6 +53,7 @@ const SkynetSurveyForm = () => {
     favChannel,
     watchingTime,
     favGenre,
+    favVision,
     dislikeChannel,
     createdAt,
   }: FormValues) => {
@@ -54,6 +63,7 @@ const SkynetSurveyForm = () => {
       favChannel,
       watchingTime,
       favGenre,
+      favVision,
       dislikeChannel,
       createdAt,
     });
@@ -74,7 +84,10 @@ const SkynetSurveyForm = () => {
     if (step === 3 && !getValues("favGenre")) {
       return showErrorMsg("အကြည့်ဆုံး အစီအစဥ်ကို ရွေးချယ်ပါ");
     }
-    if (step === 4) {
+    if (step === 4 && !getValues("favVision")) {
+      return showErrorMsg("မိမိအမြင်ကို ရွေးချယ်ပါ");
+    }
+    if (step === 5) {
       return;
     }
 
@@ -85,7 +98,7 @@ const SkynetSurveyForm = () => {
   const getButtonText = (): string =>
     step === 0
       ? "စတင်မည်"
-      : step === 4
+      : step === 5
       ? isSubmitting
         ? "ပေးပို့နေသည်..."
         : "ပေးပို့မည်"
@@ -101,7 +114,7 @@ const SkynetSurveyForm = () => {
         className={`max-w-md m-auto min-h-screen sm:px-6 px-6 flex flex-col justify-center items-center `}
       >
         <div
-          className={`bg-boxColor rounded-lg shadow-md w-full  flex flex-col gap-4 relative p-4 ${
+          className={`bg-boxColor rounded-lg shadow-md w-full  flex flex-col gap-3 relative p-4 ${
             finished && "py-8"
           }`}
         >
@@ -129,8 +142,8 @@ const SkynetSurveyForm = () => {
                   <p
                     key={stepper}
                     className={`${
-                      step - 1 === index ? "bg-[#0CA5F5]" : "bg-bodyBg"
-                    } sm:py-[2px] py-[2px] sm:px-8 px-6 bg-bodyBg rounded-full`}
+                      step - 1 === index ? "bg-mainColor" : "bg-bodyBg"
+                    } sm:py-[2px] py-[2px] sm:px-6 px-4 bg-bodyBg rounded-full`}
                   />
                 ))}
               </motion.div>
@@ -332,8 +345,50 @@ const SkynetSurveyForm = () => {
                     )}
                   />
                 )}
-
                 {step === 4 && (
+                  <Controller
+                    control={control}
+                    name="favVision"
+                    rules={{
+                      required: true,
+                    }}
+                    render={({ field: { onBlur, onChange, value } }) => (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.6 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="flex flex-col gap-2"
+                      >
+                        <h1 className="text-xl  py-2 text-mainColor font-bold">
+                          SKYNET လို့ပြောရင်း ဘာကိုပြေးမြင်လဲ?​​
+                        </h1>
+                        {visions.map((vision, index) => {
+                          return (
+                            <label
+                              key={index}
+                              className={`flex ${
+                                vision.name === value
+                                  ? "bg-bodyBg  font-semibold text-gray-800 "
+                                  : null
+                              } justify-between cursor-pointer flex-row shadow-sm py-2 px-4 border-2 border-bodyBg text-textColor select-none rounded-md`}
+                            >
+                              <h3>{vision.name}</h3>
+                              <input
+                                {...register("favVision")}
+                                type="radio"
+                                name="radio-buttons-group"
+                                onBlur={onBlur}
+                                onChange={onChange}
+                                value={vision.name}
+                              />
+                            </label>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  />
+                )}
+                {step === 5 && (
                   <Controller
                     control={control}
                     name="dislikeChannel"
@@ -348,7 +403,7 @@ const SkynetSurveyForm = () => {
                         className="flex flex-col gap-2"
                       >
                         <h1 className="text-xl  py-2 text-mainColor font-bold">
-                          အဘယ်ချန်နယ် အကြည့်​နည်းဆုံးလဲ?​
+                          ဘယ်ချန်နယ် အကြည့်​နည်းဆုံးလဲ?​
                         </h1>
                         {channels.map((channel, index) => {
                           return (
@@ -378,7 +433,7 @@ const SkynetSurveyForm = () => {
                 )}
 
                 <button
-                  type={step === 4 ? "submit" : "button"}
+                  type={step === 5 ? "submit" : "button"}
                   onClick={nextStepHandler}
                   disabled={isSubmitting}
                   className={`bg-mainColor ${
